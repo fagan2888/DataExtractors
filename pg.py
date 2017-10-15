@@ -1,20 +1,25 @@
 from sqlalchemy import create_engine
-
-
-def inputTable():
-    nameTable = input("Enter table name: ")
-    readTable(nameTable)
+import pandas as pd
 
 
 def readTable(nameTable):
     stmt = 'SELECT * FROM ' + nameTable
     results = engine.execute(stmt)
-    printResults(results)
+    return results
 
 
-def printResults(results):
+def printTable():
+    nameTable = input("Enter table name: ")
+    results = readTable(nameTable)
     for result in results:
         print(result)
+
+
+def saveTable():
+    nameTable = input("Enter table name: ")
+    results = readTable(nameTable)
+    df = pd.DataFrame(results.fetchall(), columns=['Year', 'GeoID', 'Census', 'Value'])
+    print(df)
 
 
 def trimPopString():
@@ -50,6 +55,6 @@ if __name__ == '__main__':
         'postgres://Jay:Huang@de-dbinstance.c6dfmakosb5f.us-east-1.rds.amazonaws.com:5432/dataextractorsDB')
     print(engine.table_names())
 
-    inputTable()
+    saveTable()
     # joinPovByCensusTract()
     # joinPopByCensusTract()
