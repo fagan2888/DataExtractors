@@ -55,8 +55,7 @@ def createCensusGeoTable():
             census=row['Census Tract'], latitude=row['Latitude'], longitude=row['Longitude'])
         result = connection.execute(stmt)
 
-
-if __name__ == '__main__':
+def returnCensusGeoTable():
     censusGeoData = []
 
     scrapeCensusGeoData(
@@ -67,4 +66,8 @@ if __name__ == '__main__':
         'http://www.usboundary.com/Areas/Census%20Tract/District%20of%20Columbia/3')
 
     df = pd.DataFrame(censusGeoData)
-    print(df)
+    return df
+
+
+if __name__ == '__main__':
+    pass
