@@ -14,27 +14,21 @@ def readTable(nameTable, engine):
     return results
 
 
-def saveTable(nameTable):
+def saveTable(nameTable=None):
     engine = createEngine()
-    print(engine.table_names())
+    if nameTable == None:
+        print(engine.table_names())
+        nameTable = input("Enter table name: ")
     results = readTable(nameTable, engine)
     df = pd.DataFrame(results.fetchall())
     return df
 
 
-def savePromptedTable():
+def printTable(nameTable=None):
     engine = createEngine()
-    print(engine.table_names())
-    nameTable = input("Enter table name: ")
-    results = readTable(nameTable, engine)
-    df = pd.DataFrame(results.fetchall())
-    return df
-
-
-def printTable():
-    engine = createEngine()
-    print(engine.table_names())
-    nameTable = input("Enter table name: ")
+    if nameTable == None:
+        print(engine.table_names())
+        nameTable = input("Enter table name: ")
     results = readTable(nameTable, engine)
     for result in results:
         print(result)
@@ -50,6 +44,18 @@ def createCensusTable(df):
     for lab, row in df.iterrows():
         engine.execute("INSERT INTO census_tracts (census, latitude, longitude, cluster, neighborhood) \
                         VALUES (%s, %s, %s, %s, %s)", row['Census Tract'], row['Latitude'], row['Longitude'], row['Cluster'], row['Neighborhood'])
+
+
+def createCensusTableTest(df):
+    engine = createEngine()
+    print(engine.table_names())
+
+    engine.execute("CREATE TABLE IF NOT EXISTS census_tracts_test1 \
+                    (census text, latitude text, longitude text, cluster text, neighborhood text)")
+
+    for lab, row in df.iterrows():
+        engine.execute("INSERT INTO census_tracts_test1 (census, latitude, longitude, cluster, neighborhood) \
+                        VALUES (?,?,?,?,?)", (row['Census Tract'], row['Latitude'], row['Longitude'], row['Cluster1'], row['Neighborhood1']))
 
 
 def joinPopByCensusTract():
@@ -87,4 +93,4 @@ def trimPovString():
 
 
 if __name__ == '__main__':
-    printTable()
+    printTable('census_tracts')
