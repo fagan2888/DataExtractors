@@ -1,3 +1,7 @@
+"""
+Code written to convert Lat/Lon to neighborhood_cluster
+"""
+
 import shapefile
 import geoid
 from shapely.geometry import Point, shape
@@ -14,7 +18,6 @@ def getNeighborhoodClusterLatLon(path, lat, lon):
     point = Point(lon, lat)
 
     # iterate through the shapes and check each polygon for the point
-
     for i in range(num_shapes):
         polygon = shape(shapes[i])
         if (polygon.contains(point)):
@@ -26,8 +29,9 @@ def getNeighborhoodClusterLatLon(path, lat, lon):
 
 
 if __name__ == '__main__':
-    lat = 38.90258427
-    lon = -77.06195476
+    # Test code that loads shapefile and returns a neighborhood_cluster
+    lat = 0
+    lon = 0
     print("latitude is: " + str(lat))
     print("longitude is: " + str(lon))
     shp_file_base='Neighborhood_Clusters'
