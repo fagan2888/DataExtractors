@@ -15,15 +15,14 @@ import numpy as np
 from sqlalchemy import create_engine
 
 """ Function returns Main Query path to the Postgress DB """
-def returnPathQuery():
-    """ ********** ADD path= Statement here to the DB******* """"
+def returnSQLQuery():
     ##query = 'SELECT report_date, shift, method, offence, x, y, neighborhood_cluster, neighborhood_clusters.nbh_name FROM crime_incidents'
     ###join = ' INNER JOIN neighborhood_clusters on crime_incidents.neighborhood_cluster = neighborhood_clusters."Name"'
     ###both = query + join
     query = 'SELECT report_date, neighborhood_cluster, offence, method, shift FROM crime_incidents'
     #query = 'SELECT neighborhood_cluster, report_date, shift, method, offence FROM crime_incidents'
     query2 = 'SELECT "Name" FROM neighborhood_clusters'
-    return(path, query, query2)
+    return(query, query2)
 
 """ Function returns our DBs Main DataFrame on crime_incidents """
 def getDataFrame(path, crimeIcidQuery, nhClusterQuery):
@@ -51,9 +50,9 @@ def getEmptyRowDF(nc, ym):
     return df
 
 """ Calls all functions that help return a base DataFrame from our SQL DB on crime_incidents """
-def getCrimeIncidentDB():
+def getCrimeIncidentDB(path):
     # Creat DataFrame from SQL crime_incidents database
-    path, crimeIcidQuery, nhClusterQuery = returnPathQuery()
+    crimeIcidQuery, nhClusterQuery = returnSQLQuery()
     df, df2 = getDataFrame(path, crimeIcidQuery, nhClusterQuery)
     # Add a year_month column
     df = addYearMonthCol(df)
@@ -154,8 +153,8 @@ def maskDateDF(df, frm, to):
 Main function to call other functions to build core
 crime_incidents DataFrame.
 """
-def getBaseDF(frm, to):
-    origDF, nhDF = getCrimeIncidentDB()
+def getBaseDF(path, frm, to):
+    origDF, nhDF = getCrimeIncidentDB(path)
     #Mask the unwanted dates ** MUST DO THIS HERE **
     origDF2 = maskDateDF(origDF, frm, to)
     #combine with base
@@ -220,13 +219,14 @@ def getDateRangeDF(frm, to):
 if __name__ == '__main__':
     """ Main test code to kick off DataFrame build process """
     print("Starting DF building process...")
-    # set pass in params to specific years of coverage
+    # set pass in params to specific years of coverage and SQL DB
+    path = 'put AWS SQL path here'
     frm = '2010-01'
     to = '2017-01'
     #returns full date range expected per year. i.e. Jan-Dec
-    drDF = getDateRangeDF(frm, to)
+    drDF = getDateRangeDF(frm,to)
     #returns full crime_incidents DF with n_cluster DF
-    baseDF, nhDF = getBaseDF(frm, to)
+    baseDF, nhDF = getBaseDF(path, frm, to)
     #pass in both DFs to get final edited DF
     finalDF = insertEmptyRows(baseDF, nhDF, drDF)
     print(finalDF)
