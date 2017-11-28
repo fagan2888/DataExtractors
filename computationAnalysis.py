@@ -11,7 +11,6 @@ import computationAnalysis as ca
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import loadCrimeIncidents as lc
 
 def getStatsNeighborhood(df, nhDF, frm, to):
@@ -23,10 +22,12 @@ def getStatsNeighborhood(df, nhDF, frm, to):
     lastyr_str = retBegLYStr(ty, tm)
 
     #Set up return DF with added columns for mean, med and perc diff
-    nhDF['mean'] = nhDF.apply(lambda _: '', axis=1)
-    nhDF['med'] = nhDF.apply(lambda _: '', axis=1)
+    nhDF['n_mean'] = nhDF.apply(lambda _: '', axis=1)
+    nhDF['n_med'] = nhDF.apply(lambda _: '', axis=1)
+    nhDF['fy_mean'] = nhDF.apply(lambda _: '', axis=1)
+    nhDF['ly_mean'] = nhDF.apply(lambda _: '', axis=1)
     nhDF['perc_growth'] = nhDF.apply(lambda _: '', axis=1)
-    nhDF.columns = ['n_cluster', 'mean', 'med', 'perc_growth']
+    nhDF.columns = ['n_cluster','mean','med','fy_mean','ly_mean','perc_growth']
 
     for index, row in nhDF.iterrows():
         #for each row, extract each neighborhood_cluster
@@ -37,9 +38,12 @@ def getStatsNeighborhood(df, nhDF, frm, to):
         #get mean of first and last years to compare
         first_yearDF = getYearlyData(ncDF, frm, firstyr_str)
         last_yearDF = getYearlyData(ncDF, lastyr_str, to)
-
+        nhDF['fy_mean'][index] = first_yearDF.num_crimes.mean()
+        nhDF['ly_mean'][index] = last_yearDF.num_crimes.mean()
+        # Calculate percent difference between first and last years
         nhDF['perc_growth'][index] = getPercDiff(first_yearDF.num_crimes.mean(), \
             last_yearDF.num_crimes.mean())
+
     return nhDF
 
 def getStatsWashDC(df, frm, to):
@@ -79,8 +83,11 @@ def retBegLYStr(ty, tm):
     return first_year_frm
 
 def getPercDiff(start, end):
-    Growth = ((end - start) / end) * 100
-    return Growth
+    if end == 0:
+        return 0
+    else:
+        growth = ((end - start) / end) * 100
+        return growth
 
 def getCityStatsDC(df):
     citydf = df.describe()
@@ -115,9 +122,40 @@ def getDateDiff(frm, to):
     monthsdiff = (tm-fm)
     return (yearsdiff, monthsdiff, fy, ty, fm, tm)
 
+def addNeighborhoodScore(df, citywide_growth):
+    df['n_score'] = df.apply(lambda _: '', axis=1)
+
+    for i in range(len(df)):
+        #Adjusting growth to reflect distance from citywide_growth
+        growth = df.perc_growth[i] - citywide_growth
+        if (growth >= -10 and growth <= 10.99):
+            df.n_score[i] = 0
+        elif (growth >= -11 and growth <= 20.99):
+            df.n_score[i] = -1
+        elif (growth >= -21 and growth <= 30.99):
+            df.n_score[i] = -2
+        elif (growth >= -31 and growth <= 40.99):
+            df.n_score[i] = -3
+        elif (growth >= 41):
+            df.n_score[i] = -4
+        elif (growth >= -20.99 and growth <= -10.01):
+            df.n_score[i] = 1
+        elif (growth >= -30.99 and growth <= -21):
+            df.n_score[i] = 2
+        elif (growth >= -40.99 and growth <= -31):
+            df.n_score[i] = 3
+        elif (growth <= -41):
+            df.n_score[i] = 4
+        else:
+            cluster = df.n_cluster[i]
+            print(cluster + " does not fit!")
+            df.n_score[i] = 0
+    return(df)
+
+
 if __name__ == '__main__':
     print("Starting Stats Gen...")
-    path = 'insert sql path here'
+    path = 'postgres://Tony:Sanchez@de-dbinstance.c6dfmakosb5f.us-east-1.rds.amazonaws.com:5432/dataextractorsDB'
     frm = '2010-01'
     to = '2017-01'
     """" Three calls to get final processed Crime DataFrame """
@@ -128,5 +166,11 @@ if __name__ == '__main__':
     #pass in both DFs to get final edited DF
     df = lc.insertEmptyRows(baseDF, nhDF, drDF)
 
+    total_citycrime_mean, citywide_growth = getStatsWashDC(df, frm, to)
+
+    print("DC overall crime mean: " + str(total_citycrime_mean))
+    print("DC growth over period: " + str(citywide_growth))
     new_nhdf = getStatsNeighborhood(df, nhDF, frm, to)
-    print(new_nhdf)
+
+    scoresDF = addNeighborhoodScore(new_nhdf, citywide_growth)
+    print(scoresDF)
